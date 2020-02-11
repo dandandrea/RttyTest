@@ -32,38 +32,62 @@ sym_mark_buf  = make_sound(2125)
 sound_space = pygame.sndarray.make_sound(sym_space_buf)
 sound_mark  = pygame.sndarray.make_sound(sym_mark_buf)
 
+ascii_to_baudot = {
+  'A': 0x03,
+  'B': 0x19,
+  'C': 0x0E,
+  'D': 0x09,
+  'E': 0x01,
+  'F': 0x0D,
+  'G': 0x1A,
+  'H': 0x14,
+  'I': 0x06,
+  'J': 0x0B,
+  'K': 0x0F,
+  'L': 0x12,
+  'M': 0x1C,
+  'N': 0x0C,
+  'O': 0x18,
+  'P': 0x16,
+  'Q': 0x17,
+  'R': 0x0A,
+  'S': 0x05,
+  'T': 0x10,
+  'U': 0x07,
+  'V': 0x1E,
+  'W': 0x13,
+  'X': 0x1D,
+  'Y': 0x15,
+  'Z': 0x11,
+  ' ': 0x04,
+  '\n': 0x02
+}
+
 def send_symbol(char):
-    # Start message
+    # Start bit
     sound_space.play(loops = 0) ; sleep(symbol_duration)
 
-    # Message
-    if char == 'R':
-        sound_space.play(loops = 0) ; sleep(symbol_duration)
-        sound_mark.play(loops = 0) ; sleep(symbol_duration)
-        sound_space.play(loops = 0) ; sleep(symbol_duration)
-        sound_mark.play(loops = 0) ; sleep(symbol_duration)
-        sound_space.play(loops = 0) ; sleep(symbol_duration)
-    elif char == 'Y':
-        sound_mark.play(loops = 0) ; sleep(symbol_duration)
-        sound_space.play(loops = 0) ; sleep(symbol_duration)
-        sound_mark.play(loops = 0) ; sleep(symbol_duration)
-        sound_space.play(loops = 0) ; sleep(symbol_duration)
-        sound_mark.play(loops = 0) ; sleep(symbol_duration)
-    else: # Unknown character; send "U" for "Unknown"
-        sound_mark.play(loops = 0) ; sleep(symbol_duration)
-        sound_mark.play(loops = 0) ; sleep(symbol_duration)
-        sound_mark.play(loops = 0) ; sleep(symbol_duration)
-        sound_space.play(loops = 0) ; sleep(symbol_duration)
-        sound_space.play(loops = 0) ; sleep(symbol_duration)
+    baudot_char = ascii_to_baudot.get(char, 0x07)
 
-    # End message
+    # Payload
+    for shift in range(0, 5):
+        mask = 1 << shift
+        if baudot_char & mask != 0:
+            sound_mark.play(loops = 0) ; sleep(symbol_duration)
+        else:
+            sound_space.play(loops = 0) ; sleep(symbol_duration)
+
+    # Stop bits
     sound_mark.play(loops = 0) ; sleep(symbol_duration)
     sound_mark.play(loops = 0) ; sleep(symbol_duration)
+
+def send_message(message):
+    for char in message:
+        send_symbol(char)
 
 _running = True
 while _running:
-    send_symbol('R') 
-    send_symbol('Y') 
+    send_message('RYRYRYRYRYRYRYRYRYRY\nTHIS IS A TEST\nRYRYRYRYRYRYRYRYRYRY\n\n')
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
